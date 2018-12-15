@@ -17,42 +17,55 @@ form.addEventListener("submit", e => {
   e.preventDefault();
 });
 
-let dataPoints = [
-  { label: "Windows", y: 0 },
-  { label: "MacOS", y: 0 },
-  { label: "Linux", y: 0 },
-  { label: "Other", y: 0 }
-];
-const chartContainer = document.querySelector("#chartContainer");
-if (chartContainer) {
-  const chart = new CanvasJS.Chart("chartContainer", {
-    animationEnabled: true,
-    theme: "theme1",
-    title: {
-      text: "OS Results"
-    },
-    data: [{ type: "column", dataPoints: dataPoints }]
-  });
-  chart.render();
+fetch("http://localhost:3000/poll")
+  .then(res => res.json())
+  .then(data => {
+    const votes = data.votes;
+    const totalVotes = votes.length;
+    // Count vote points - acc/current
+    const voteCounts = votes.reduce(
+      (acc, vote) => (
+        (acc[vote.os] = (acc[vote.os] || 0) + parseInt(vote.points)), acc
+      ),
+      {}
+    );
+    let dataPoints = [
+      { label: "Windows", y: voteCounts.Windows },
+      { label: "MacOS", y: voteCounts.MacOS },
+      { label: "Linux", y: voteCounts.Linux },
+      { label: "Other", y: voteCounts.Other }
+    ];
+    const chartContainer = document.querySelector("#chartContainer");
+    if (chartContainer) {
+      const chart = new CanvasJS.Chart("chartContainer", {
+        animationEnabled: true,
+        theme: "theme1",
+        title: {
+          text: `Total Votes: ${totalVotes}`
+        },
+        data: [{ type: "column", dataPoints: dataPoints }]
+      });
+      chart.render();
 
-  // Enable pusher logging - don't include this in production
-  Pusher.logToConsole = true;
+      // Enable pusher logging - don't include this in production
+      Pusher.logToConsole = true;
 
-  var pusher = new Pusher("721772509b5d3e12f546", {
-    cluster: "mt1",
-    forceTLS: true
-  });
+      var pusher = new Pusher("721772509b5d3e12f546", {
+        cluster: "mt1",
+        forceTLS: true
+      });
 
-  var channel = pusher.subscribe("os-poll");
-  channel.bind("os-vote", function(data) {
-    dataPoints = dataPoints.map(x => {
-      if (x.label == data.os) {
-        x.y += data.points;
-        return x;
-      } else {
-        return x;
-      }
-    });
-    chart.render();
+      var channel = pusher.subscribe("os-poll");
+      channel.bind("os-vote", function(data) {
+        dataPoints = dataPoints.map(x => {
+          if (x.label == data.os) {
+            x.y += data.points;
+            return x;
+          } else {
+            return x;
+          }
+        });
+        chart.render();
+      });
+    }
   });
-}
