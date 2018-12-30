@@ -5,7 +5,7 @@ mongoose.Promise = global.Promise;
 // Mongoose Connect
 mongoose
   .connect(
-    "mongodb://zainkhan2504:zainkhan2504@ds135714.mlab.com:35714/voteos",
+    "mongodb+srv://zainkhan:zainkhan25@voteos-cluster-gl5ej.mongodb.net/test?retryWrites=true",
     { useNewUrlParser: true }
   )
   .then(() => console.log("MongoDB Connected"))
